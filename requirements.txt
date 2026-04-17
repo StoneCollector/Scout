@@ -1,0 +1,10 @@
+# Scout Dependencies
+# Using a stable version of Flet before the massive 0.84 breaking API changes
+flet==0.23.2
+watchdog>=4.0.1
+pywin32>=306
+psutil>=5.0.0
+pystray>=0.19.0
+Pillow>=9.0.0
+requests>=2.25.1
+plyer>=2.1.0

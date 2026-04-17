@@ -1,0 +1,59 @@
+# ============================================================
+# Scout Active Defense — .gitignore
+# ============================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.pdb
+*.so
+
+# --- Virtual Environment ---
+venv/
+env/
+.venv/
+.env/
+ENV/
+
+# --- Distribution / Build ---
+dist/
+build/
+*.egg-info/
+*.spec
+*.exe
+
+# --- Scout Runtime Data ---
+# Never commit the vault (contains encoded copies of protected files)
+.scout_vault/
+# Never commit logs
+logs/
+*.log
+
+# --- Scout Config ---
+# Config files may contain sensitive webhook URLs or system paths
+scout_config.json
+
+# --- IDE & Editor ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --- OS Junk ---
+Thumbs.db
+desktop.ini
+.DS_Store
+ehthumbs.db
+
+# --- Testing Artifacts ---
+test_mon/
+scratch/
+*.tmp
+lock_test.txt
+test_config.txt
+
+# --- Jupyter ---
+*.ipynb_checkpoints
