@@ -3,10 +3,21 @@ import time
 import re
 import flet as ft
 from datetime import datetime
-from scout_engine import ScoutEngine
+from scout_engine import ScoutEngine, PROJECT_ROOT
 from tray_manager import TrayManager
 import winreg
 import sys
+import ctypes
+
+# --- STEALTH MODE: HIDE CONSOLE ---
+if sys.platform == "win32":
+    kernel32 = ctypes.WinDLL('kernel32')
+    user32 = ctypes.WinDLL('user32')
+    # Get the window handle of the console
+    hWnd = kernel32.GetConsoleWindow()
+    if hWnd:
+        # Hide the window (SW_HIDE = 0)
+        user32.ShowWindow(hWnd, 0)
 
 def main(page: ft.Page):
     page.title = "Scout - Active Defense"
@@ -18,6 +29,11 @@ def main(page: ft.Page):
     page.bgcolor = ft.colors.BLUE_GREY_50
     page.fonts = {"Inter": "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"}
     page.theme = ft.Theme(font_family="Inter")
+    
+    # Stealth Startup Logic
+    page.window.prevent_close = True
+    if "--hidden" in sys.argv:
+        page.window.visible = False
     
     engine = ScoutEngine()
     
@@ -471,13 +487,29 @@ def main(page: ft.Page):
 
     def toggle_auto_start(e):
         try:
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_PATH, 0, winreg.KEY_SET_VALUE) as registry_key:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_PATH, 0, winreg.KEY_ALL_ACCESS) as registry_key:
                 if e.control.value:
-                    winreg.SetValueEx(registry_key, APP_NAME, 0, winreg.REG_SZ, sys.executable + ' "' + os.path.abspath(__file__) + '"')
+                    # 'Follow the Process': Use the path of whatever is currently running
+                    if getattr(sys, 'frozen', False):
+                        cmd = f'"{os.path.normpath(sys.executable)}" --hidden'
+                    else:
+                        # Use pythonw.exe to hide the terminal window for script-mode startup
+                        py_path = sys.executable.lower()
+                        if "python.exe" in py_path:
+                            executable = sys.executable.replace("python.exe", "pythonw.exe")
+                        elif "python" in py_path and not py_path.endswith("w.exe"):
+                             executable = sys.executable + "w" 
+                        else:
+                            executable = sys.executable
+                        cmd = f'"{os.path.normpath(executable)}" "{os.path.normpath(os.path.abspath(__file__))}" --hidden'
+                    
+                    winreg.SetValueEx(registry_key, APP_NAME, 0, winreg.REG_SZ, cmd)
+                    print(f"REGISTRY SUCCESS: Scout scheduled at {cmd}")
                 else:
                     winreg.DeleteValue(registry_key, APP_NAME)
+                    print("REGISTRY REMOVED: Auto-start disabled.")
         except Exception as ex:
-            pass
+            print(f"REGISTRY ERROR: {type(ex).__name__} - {ex}")
             
     def render_settings():
         auto_switch = ft.Switch(value=is_auto_start(), on_change=toggle_auto_start, active_color=ACCENT)
@@ -594,7 +626,6 @@ def main(page: ft.Page):
 
     # Modern Flet event handling
     page.on_window_event = on_window_event
-    page.window.prevent_close = True
 
 if __name__ == "__main__":
     ft.app(target=main)

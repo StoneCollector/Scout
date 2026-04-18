@@ -9,11 +9,20 @@ import json
 import threading
 import requests
 import shutil
+import sys
 # Native notifications are now handled via TrayManager callback to ensure stability
 
 from recovery_vault import RecoveryVault
 from security_manager import SecurityManager
 from process_monitor import ProcessMonitor
+
+def _get_app_root():
+    """Detects the physical project directory to prevent 'System32 Drift' on Windows."""
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+PROJECT_ROOT = _get_app_root()
 
 logger = logging.getLogger("Scout.Engine")
 if not logger.handlers:
@@ -57,7 +66,8 @@ class ScoutEventHandler(FileSystemEventHandler):
 
 class ScoutEngine:
     def __init__(self):
-        self.vault = RecoveryVault()
+        # Anchor the vault to the project root to prevent Access Denied in System32
+        self.vault = RecoveryVault(os.path.join(PROJECT_ROOT, ".scout_vault"))
         self.security = SecurityManager()
         self.observer = None
         
@@ -106,7 +116,7 @@ class ScoutEngine:
         self._save_history()
 
     def _get_config_path(self):
-        return os.path.join(self.vault.vault_path, "scout_config.json")
+        return os.path.join(PROJECT_ROOT, "scout_config.json")
 
     def _save_config(self):
         config = {

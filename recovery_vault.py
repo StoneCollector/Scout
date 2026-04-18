@@ -32,8 +32,16 @@ class RecoveryVault:
     def _initialize_vault(self):
         """Creates the vault directory and sets it to Hidden on Windows."""
         if not os.path.exists(self.vault_path):
-            os.makedirs(self.vault_path)
-            logger.info(f"Initialized new Recovery Vault at: {self.vault_path}")
+            try:
+                os.makedirs(self.vault_path)
+                logger.info(f"Initialized new Recovery Vault at: {self.vault_path}")
+            except PermissionError:
+                logger.error(f"CRITICAL: Permission Denied while creating vault at {self.vault_path}. "
+                             "Ensure the application has write access to the project directory.")
+                return
+            except Exception as e:
+                logger.error(f"Failed to create vault directory: {e}")
+                return
 
         # Hide the directory on Windows
         try:
